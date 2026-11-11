@@ -22,7 +22,7 @@ public class FlatButton extends ButtonWidget {
     public FlatButton selected(BooleanSupplier s) { this.selected = s; return this; }
 
     @Override
-    protected void renderWidget(DrawContext ctx, int mx, int my, float delta) {
+    public void renderWidget(DrawContext ctx, int mx, int my, float delta) {
         int x = getX(), y = getY(), w = getWidth(), h = getHeight();
         boolean hov = isHovered();
         int bg, bar;
