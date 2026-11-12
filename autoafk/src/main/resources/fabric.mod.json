@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "autoafk",
+  "version": "${version}",
+  "name": "AutoAFK",
+  "description": "AutoFish + AutoLogout (/hub) + losowe ruchy myszka",
+  "environment": "client",
+  "entrypoints": { "client": ["pl.autoafk.AutoAfkClient"] },
+  "mixins": ["autoafk.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
