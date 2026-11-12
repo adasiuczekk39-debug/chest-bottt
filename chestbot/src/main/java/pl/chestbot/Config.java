@@ -29,6 +29,9 @@ public class Config {
     public String sellCommand = "sell all";
     public String spawnCommand = "spawn";
     public int sellWaitTicks = 30;
+    public boolean autoConfirmSell = true;       // gdy serwer prosi o potwierdzenie (np. >10k) -> wpisz komende potwierdzenia
+    public String sellConfirmKeyword = "sell confirm"; // fragment wiadomosci na czacie, ktory oznacza prosbe o potwierdzenie
+    public String sellConfirmCommand = "sell confirm";  // komenda potwierdzajaca (bez /)
     public boolean requireProtection = true;
     public String protectionKeyword = "ochron";   // pusty = dowolny tekst nad hotbarem
     public double protectionTimeoutSec = 3.0;     // po ilu s braku tekstu uznajemy ze ochrona sie skonczyla

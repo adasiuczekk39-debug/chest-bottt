@@ -102,7 +102,7 @@ public final class Pathfinder {
         return w.getChunkManager().getWorldChunk(p.getX() >> 4, p.getZ() >> 4) != null;
     }
 
-    private static boolean passable(ClientWorld w, BlockPos p) {
+    static boolean passable(ClientWorld w, BlockPos p) {
         if (!loaded(w, p)) return false;
         BlockState s = w.getBlockState(p);
         if (!s.getFluidState().isEmpty()) return false;
@@ -112,7 +112,7 @@ public final class Pathfinder {
                 && b != Blocks.SWEET_BERRY_BUSH && b != Blocks.POWDER_SNOW && b != Blocks.WITHER_ROSE;
     }
 
-    private static boolean ground(ClientWorld w, BlockPos p) {
+    static boolean ground(ClientWorld w, BlockPos p) {
         if (!loaded(w, p)) return false;
         BlockState s = w.getBlockState(p);
         if (s.getCollisionShape(w, p).isEmpty()) return false;
@@ -120,5 +120,48 @@ public final class Pathfinder {
         Block b = s.getBlock();
         return b != Blocks.MAGMA_BLOCK && b != Blocks.CACTUS && b != Blocks.CAMPFIRE
                 && b != Blocks.SOUL_CAMPFIRE && b != Blocks.HONEY_BLOCK;
+    }
+
+    /**
+     * Wygladza sciezke: zamiast schodkow (1 w bok, 1 do przodu) bot idzie prosta linia (takze po skosie),
+     * o ile cala linia jest bezpieczna dla gracza o szerokosci 0.6. Zmiany wysokosci zostaja jako osobne punkty.
+     */
+    public static List<BlockPos> smooth(ClientWorld w, BlockPos start, List<BlockPos> in) {
+        if (in.size() < 2) return in;
+        List<BlockPos> out = new ArrayList<>();
+        BlockPos cur = start;
+        int i = 0;
+        while (i < in.size()) {
+            int best = i;
+            if (in.get(i).getY() == cur.getY()) {
+                int limit = Math.min(in.size() - 1, i + 24);
+                for (int j = i + 1; j <= limit; j++) {
+                    if (in.get(j).getY() != cur.getY()) break;
+                    if (lineClear(w, cur, in.get(j))) best = j;
+                }
+            }
+            out.add(in.get(best));
+            cur = in.get(best);
+            i = best + 1;
+        }
+        return out;
+    }
+
+    private static boolean lineClear(ClientWorld w, BlockPos a, BlockPos b) {
+        double ax = a.getX() + 0.5, az = a.getZ() + 0.5, bx = b.getX() + 0.5, bz = b.getZ() + 0.5;
+        double len = Math.hypot(bx - ax, bz - az);
+        int steps = Math.max(1, (int) Math.ceil(len / 0.25));
+        int y = a.getY();
+        for (int s = 0; s <= steps; s++) {
+            double t = (double) s / steps;
+            double x = ax + (bx - ax) * t, z = az + (bz - az) * t;
+            for (int ox = -1; ox <= 1; ox += 2) {
+                for (int oz = -1; oz <= 1; oz += 2) {
+                    BlockPos feet = new BlockPos((int) Math.floor(x + ox * 0.35), y, (int) Math.floor(z + oz * 0.35));
+                    if (!passable(w, feet) || !passable(w, feet.up()) || !ground(w, feet.down())) return false;
+                }
+            }
+        }
+        return true;
     }
 }

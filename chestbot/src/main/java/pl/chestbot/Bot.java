@@ -60,6 +60,8 @@ public final class Bot {
     private static int lootStart, nextClick, lastClicked;
     private static final Set<Integer> skip = new HashSet<>();
     private static int sellStage, sellTick, sellTries;
+    private static boolean confirmPending, confirmSent;
+    private static int confirmAt;
 
     private static int spawnStage, spawnStart, spawnSent;
     private static Vec3d spawnPos = Vec3d.ZERO;
@@ -127,10 +129,24 @@ public final class Bot {
         return true;
     }
 
-    /** Stary punkt wejscia (event wiadomosci systemowych). */
+    /** Wiadomosci systemowe: overlay = tekst nad hotbarem, reszta = czat. */
     public static void onGameMessage(Text msg, boolean overlay) {
-        if (!overlay || msg == null) return;
-        onOverlay(msg.getString());
+        if (msg == null) return;
+        if (overlay) { onOverlay(msg.getString()); return; }
+        onChatLine(msg.getString());
+    }
+
+    /** Podczas sprzedazy: jesli serwer prosi o potwierdzenie (np. /sell confirm), zaplanuj wpisanie komendy. */
+    public static void onChatLine(String s) {
+        if (!enabled || state != State.SELLING || s == null) return;
+        Config c = Config.get();
+        if (!c.autoConfirmSell || confirmPending || confirmSent) return;
+        String kw = c.sellConfirmKeyword == null ? "" : c.sellConfirmKeyword.trim().toLowerCase(Locale.ROOT);
+        if (kw.isEmpty()) return;
+        if (s.toLowerCase(Locale.ROOT).contains(kw)) {
+            confirmPending = true;
+            confirmAt = tick + 6 + RANDOM.nextInt(6);
+        }
     }
 
     /** Wywolywane (z mixina) dla kazdego tekstu pokazywanego nad hotbarem. */
@@ -289,7 +305,7 @@ public final class Bot {
             setStatus("Brak ścieżki do skrzynki - pomijam");
             return;
         }
-        beginWalk(p, compress(pth, p.getBlockPos()), State.WALKING);
+        beginWalk(p, Pathfinder.smooth(mc.world, p.getBlockPos(), pth), State.WALKING);
         setStatus("Idę do skrzynki (" + (int) Math.sqrt(p.getPos().squaredDistanceTo(ctr)) + " m)");
     }
 
@@ -305,7 +321,7 @@ public final class Bot {
             return dx * dx + dz * dz <= 6.25;
         }, tv, 2.0, 0.0, 3000);
         if (pth != null && !pth.isEmpty()) {
-            beginWalk(p, compress(pth, p.getBlockPos()), State.EXPLORING);
+            beginWalk(p, Pathfinder.smooth(mc.world, p.getBlockPos(), pth), State.EXPLORING);
             setStatus("Eksploruję w poszukiwaniu skrzynek");
         }
     }
@@ -510,10 +526,20 @@ public final class Bot {
         holdStill(mc, p);
         if (sellStage == 0) {
             if (p.currentScreenHandler != p.playerScreenHandler) p.closeHandledScreen();
+            confirmPending = false;
+            confirmSent = false;
             p.networkHandler.sendChatCommand(stripSlash(c.sellCommand));
             sellStage = 1;
             sellTick = tick;
             setStatus("Sprzedaję: /" + stripSlash(c.sellCommand));
+            return;
+        }
+        if (confirmPending && tick >= confirmAt) {
+            p.networkHandler.sendChatCommand(stripSlash(c.sellConfirmCommand));
+            confirmPending = false;
+            confirmSent = true;
+            sellTick = tick;
+            setStatus("Potwierdzam: /" + stripSlash(c.sellConfirmCommand));
             return;
         }
         if (tick - sellTick < c.sellWaitTicks) return;

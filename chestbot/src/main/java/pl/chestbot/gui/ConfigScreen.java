@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 public class ConfigScreen extends Screen {
     private static final int W = 392, H = 262, COLW = 178, GAP = 12;
     private static final int ACCENT = 0xFF4ADE80;
-    private static final String[] TABS = {"Bot", "Komendy i ochrona", "Chest ESP", "Kolory ESP"};
+    private static final String[] TABS = {"Bot", "Sprzedaż", "Ochrona", "Chest ESP", "Kolory"};
     private static int lastTab = 0;
 
     private int tab = lastTab;
@@ -36,7 +36,7 @@ public class ConfigScreen extends Screen {
         px = (width - W) / 2;
         py = (height - H) / 2;
 
-        int tw = (W - 32 - 9) / 4;
+        int tw = (W - 32 - (TABS.length - 1) * 3) / TABS.length;
         for (int i = 0; i < TABS.length; i++) {
             final int idx = i;
             addDrawableChild(new FlatButton(px + 16 + i * (tw + 3), py + 28, tw, 18, TABS[i], b -> {
@@ -50,8 +50,9 @@ public class ConfigScreen extends Screen {
 
         switch (tab) {
             case 0 -> botTab();
-            case 1 -> cmdTab();
-            case 2 -> espTab();
+            case 1 -> sellTab();
+            case 2 -> protTab();
+            case 3 -> espTab();
             default -> colorTab();
         }
     }
@@ -71,21 +72,28 @@ public class ConfigScreen extends Screen {
         toggle(1, 3, "Beczki", () -> c.useBarrels, v -> c.useBarrels = v);
         toggle(0, 4, "Sprint", () -> c.sprint, v -> c.sprint = v);
         toggle(1, 4, "Eksploracja bez skrzynek", () -> c.explore, v -> c.explore = v);
-        toggle(0, 5, "Auto-sprzedaż", () -> c.autoSell, v -> c.autoSell = v);
-        slider(1, 5, "Min. wolnych slotów", 0, 8, 1, c.minFreeSlots, "", v -> c.minFreeSlots = (int) Math.round(v));
     }
 
-    private void cmdTab() {
+    private void sellTab() {
         Config c = Config.get();
-        field(0, 0, "Komenda sprzedaży (bez /)", c.sellCommand, s -> c.sellCommand = s);
-        field(1, 0, "Komenda spawn (bez /)", c.spawnCommand, s -> c.spawnCommand = s);
-        field(0, 1.5, "Słowo kluczowe ochrony (puste = dowolny tekst)", c.protectionKeyword, s -> c.protectionKeyword = s);
-        toggle(1, 1.5, "Kończ po ochronie", () -> c.requireProtection, v -> c.requireProtection = v);
-        slider(0, 3, "Ochrona zniknęła po", 1, 15, 0.5, c.protectionTimeoutSec, " s", v -> c.protectionTimeoutSec = v);
-        slider(1, 3, "Czekaj na ochronę przy starcie", 1, 30, 1, c.protectionStartGraceSec, " s", v -> c.protectionStartGraceSec = v);
-        slider(0, 4, "Czekanie po /sell", 10, 100, 5, c.sellWaitTicks, " t", v -> c.sellWaitTicks = (int) Math.round(v));
-        slider(1, 4, "/spawn gdy zostało", 1, 30, 1, c.spawnAtSeconds, " s", v -> c.spawnAtSeconds = v);
-        slider(0, 5, "Stój po /spawn", 3, 30, 1, c.spawnWaitSec, " s", v -> c.spawnWaitSec = v);
+        field(0, 0, "Komenda sprzedaży (bez /)", c.sellCommand, v -> c.sellCommand = v);
+        field(1, 0, "Komenda potwierdzenia (bez /)", c.sellConfirmCommand, v -> c.sellConfirmCommand = v);
+        field(0, 1.5, "Fragment wiadomości z prośbą o potwierdzenie", c.sellConfirmKeyword, v -> c.sellConfirmKeyword = v);
+        toggle(1, 1.5, "Auto-potwierdzanie", () -> c.autoConfirmSell, v -> c.autoConfirmSell = v);
+        toggle(0, 3, "Auto-sprzedaż", () -> c.autoSell, v -> c.autoSell = v);
+        slider(1, 3, "Czekanie po sprzedaży", 10, 100, 5, c.sellWaitTicks, " t", v -> c.sellWaitTicks = (int) Math.round(v));
+        slider(0, 4, "Min. wolnych slotów", 0, 8, 1, c.minFreeSlots, "", v -> c.minFreeSlots = (int) Math.round(v));
+    }
+
+    private void protTab() {
+        Config c = Config.get();
+        field(0, 0, "Komenda spawn (bez /)", c.spawnCommand, v -> c.spawnCommand = v);
+        field(1, 0, "Słowo kluczowe ochrony (puste = dowolny)", c.protectionKeyword, v -> c.protectionKeyword = v);
+        toggle(0, 1.5, "Kończ po ochronie", () -> c.requireProtection, v -> c.requireProtection = v);
+        slider(1, 1.5, "/spawn gdy zostało", 1, 30, 1, c.spawnAtSeconds, " s", v -> c.spawnAtSeconds = v);
+        slider(0, 2.5, "Stój po /spawn", 3, 30, 1, c.spawnWaitSec, " s", v -> c.spawnWaitSec = v);
+        slider(1, 2.5, "Tekst zniknął po", 1, 15, 0.5, c.protectionTimeoutSec, " s", v -> c.protectionTimeoutSec = v);
+        slider(0, 3.5, "Czekaj na ochronę przy starcie", 1, 30, 1, c.protectionStartGraceSec, " s", v -> c.protectionStartGraceSec = v);
     }
 
     private void espTab() {
@@ -158,14 +166,14 @@ public class ConfigScreen extends Screen {
             String free = client != null && client.player != null ? String.valueOf(Bot.freeSlots(client.player)) : "?";
             ctx.drawTextWithShadow(textRenderer, "Skrzynki: " + Bot.chestsLooted + "   Sprzedaże: " + Bot.sells + "   Wolne sloty: " + free, px + 16, sy + 12, 0xFFAAAAAA);
             ctx.drawTextWithShadow(textRenderer, "Klawisze: Right Shift = menu, J = bot, H = ESP (zmienisz w Sterowaniu)", px + 16, sy + 28, 0xFF666666);
-        } else if (tab == 1) {
+        } else if (tab == 2) {
             ctx.fill(px + 16, sy - 4, px + W - 16, sy - 3, 0xFF26303A);
             String o = Bot.lastOverlay.isEmpty() ? "(jeszcze nic nie odebrano)" : Bot.lastOverlay;
             if (o.length() > 52) o = o.substring(0, 52) + "...";
             ctx.drawTextWithShadow(textRenderer, "Ostatni tekst nad hotbarem: " + o, px + 16, sy, 0xFFFFFFFF);
             ctx.drawTextWithShadow(textRenderer, "Wykryta ochrona: " + (Bot.protectionSeenNow() ? "§aTAK" : "§cNIE") + "  §7(" + Bot.protectionLabel() + ")", px + 16, sy + 12, 0xFFAAAAAA);
-            ctx.drawTextWithShadow(textRenderer, "Skopiuj fragment tekstu ochrony do pola 'słowo kluczowe'.", px + 16, sy + 28, 0xFF666666);
-        } else if (tab == 3) {
+            ctx.drawTextWithShadow(textRenderer, "Wpisz fragment tego tekstu w słowo kluczowe ochrony.", px + 16, sy + 28, 0xFF666666);
+        } else if (tab == 4) {
             ctx.fill(cx(0), ry(4.2), cx(0) + COLW, ry(4.2) + 24, 0xFF000000 | c.espColor);
             ctx.fill(cx(1), ry(4.2), cx(1) + COLW, ry(4.2) + 24, 0xFF000000 | c.espVisitedColor);
         }
