@@ -56,7 +56,7 @@ public final class Pathfinder {
                 double g = cur.g + cost;
                 Node old = best.get(nk);
                 if (old != null && old.g <= g) continue;
-                Node nn = new Node(n, cur, g, g + h(n, hTarget, slack, yWeight));
+                Node nn = new Node(n, cur, g, g + 1.4 * h(n, hTarget, slack, yWeight));
                 best.put(nk, nn);
                 open.add(nn);
             }

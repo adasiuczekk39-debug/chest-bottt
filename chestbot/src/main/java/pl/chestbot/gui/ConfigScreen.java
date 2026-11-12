@@ -84,6 +84,8 @@ public class ConfigScreen extends Screen {
         slider(0, 3, "Ochrona zniknęła po", 1, 15, 0.5, c.protectionTimeoutSec, " s", v -> c.protectionTimeoutSec = v);
         slider(1, 3, "Czekaj na ochronę przy starcie", 1, 30, 1, c.protectionStartGraceSec, " s", v -> c.protectionStartGraceSec = v);
         slider(0, 4, "Czekanie po /sell", 10, 100, 5, c.sellWaitTicks, " t", v -> c.sellWaitTicks = (int) Math.round(v));
+        slider(1, 4, "/spawn gdy zostało", 1, 30, 1, c.spawnAtSeconds, " s", v -> c.spawnAtSeconds = v);
+        slider(0, 5, "Stój po /spawn", 3, 30, 1, c.spawnWaitSec, " s", v -> c.spawnWaitSec = v);
     }
 
     private void espTab() {

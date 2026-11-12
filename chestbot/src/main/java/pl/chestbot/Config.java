@@ -33,6 +33,8 @@ public class Config {
     public String protectionKeyword = "ochron";   // pusty = dowolny tekst nad hotbarem
     public double protectionTimeoutSec = 3.0;     // po ilu s braku tekstu uznajemy ze ochrona sie skonczyla
     public double protectionStartGraceSec = 8.0;  // ile s czekac na pojawienie sie ochrony po starcie
+    public double spawnAtSeconds = 8.0;           // wyslij /spawn gdy do konca ochrony zostalo <= tyle sekund
+    public double spawnWaitSec = 12.0;            // ile s stac nieruchomo po /spawn (teleport sie anuluje przy ruchu)
 
     // ---------- ESP ----------
     public boolean espEnabled = false;
